@@ -67,6 +67,8 @@ LOCAL_SSH_KEY = _cfg("local_ssh_key", "/home/zuichen/.ssh/id_rsa")
 # 宿主机的 .config/QQ 挂载到了容器的 /app/.config/QQ
 DOCKER_INTERNAL_PATH = _cfg("docker_internal_path", "/app/.config/QQ/temp/")
 
+USE_SSH_TRANSFER = bool(_cfg("use_ssh_transfer", True))
+
 RANDOM_PASSWORD_LENGTH = int(_cfg("random_password_length", 10))
 
 # ====================== 去重配置 ======================
@@ -220,6 +222,9 @@ def scp_file_to_remote(local_file_path, remote_temp_filename=None):
         return None
 
 def delete_remote_file(remote_file_path):
+    if not USE_SSH_TRANSFER:
+        return True
+
     # 这里我们简化逻辑，因为是本机，可以直接用 os.remove 删除
     # 如果必须用 SSH 删除，保持原有逻辑即可
     # 为了保险起见，这里还是保留 SSH 逻辑，或者你可以改为 os.remove(remote_file_path) 如果权限允许
@@ -444,6 +449,30 @@ def prepare_file_for_scp(file_path: str, force_safe: bool = False) -> tuple[str,
 
     shutil.copyfile(file_path, safe_path)
     return safe_path, True
+
+def stage_file_for_delivery(file_path: str, force_safe: bool = False) -> tuple[str | None, str | None, str | None]:
+    safe_path, cleanup_local = prepare_file_for_scp(file_path, force_safe=force_safe)
+
+    if USE_SSH_TRANSFER:
+        try:
+            remote_file_path = scp_file_to_remote(safe_path)
+            if not remote_file_path:
+                return None, None, None
+        finally:
+            if cleanup_local:
+                try:
+                    os.remove(safe_path)
+                except Exception:
+                    pass
+
+        file_name = os.path.basename(remote_file_path)
+        docker_file_path = os.path.join(DOCKER_INTERNAL_PATH, file_name)
+        file_url = f"file://{docker_file_path}"
+        return file_url, remote_file_path, None
+
+    file_url = f"file://{os.path.abspath(safe_path)}"
+    cleanup_path = safe_path if cleanup_local else None
+    return file_url, None, cleanup_path
 
 def randomize_file_hash(file_path: str) -> tuple[str, bool, str | None]:
     if not os.path.exists(file_path):
@@ -690,22 +719,26 @@ def should_redirect(scope_key: str) -> bool:
     return scope_key in redirect_scopes
 
 def stage_file_for_forward(file_path: str) -> tuple[str | None, str | None, str | None]:
-    safe_path, cleanup_local = prepare_file_for_scp(file_path, force_safe=False)
-    try:
-        remote_file_path = scp_file_to_remote(safe_path)
-        if not remote_file_path:
-            return None, None, None
-    finally:
-        if cleanup_local:
-            try:
-                os.remove(safe_path)
-            except Exception:
-                pass
+    if USE_SSH_TRANSFER:
+        safe_path, cleanup_local = prepare_file_for_scp(file_path, force_safe=False)
+        try:
+            remote_file_path = scp_file_to_remote(safe_path)
+            if not remote_file_path:
+                return None, None, None
+        finally:
+            if cleanup_local:
+                try:
+                    os.remove(safe_path)
+                except Exception:
+                    pass
 
-    file_name = os.path.basename(remote_file_path)
-    docker_file_path = os.path.join(DOCKER_INTERNAL_PATH, file_name)
-    file_url = f"file://{docker_file_path}"
-    return remote_file_path, file_url, file_name
+        file_name = os.path.basename(remote_file_path)
+        docker_file_path = os.path.join(DOCKER_INTERNAL_PATH, file_name)
+        file_url = f"file://{docker_file_path}"
+        return remote_file_path, file_url, file_name
+
+    file_url = f"file://{os.path.abspath(file_path)}"
+    return None, file_url, os.path.basename(file_path)
 
 def build_forward_node(file_url: str, display_name: str, uploader_id: int | str | None, uploader_name: str | None):
     try:
@@ -918,22 +951,10 @@ class NapcatWebSocketBot:
 
     async def _send_file_payload(self, action, params, file_path, echo, force_safe=False):
         log("[📦 message_sender]", f"准备发送文件 action={action} params={params} {describe_file(file_path)}")
-        safe_path, cleanup_local = prepare_file_for_scp(file_path, force_safe=force_safe)
-        try:
-            remote_file_path = scp_file_to_remote(safe_path)
-            if not remote_file_path:
-                log("[❌ message_sender]", f"文件上传失败，无法发送 action={action} params={params} {describe_file(safe_path)}")
-                return False, None, None
-        finally:
-            if cleanup_local:
-                try:
-                    os.remove(safe_path)
-                except Exception:
-                    pass
-
-        file_name = os.path.basename(remote_file_path)
-        docker_file_path = os.path.join(DOCKER_INTERNAL_PATH, file_name)
-        file_url = f"file://{docker_file_path}"
+        file_url, remote_file_path, cleanup_path = stage_file_for_delivery(file_path, force_safe=force_safe)
+        if not file_url:
+            log("[❌ message_sender]", f"文件处理失败，无法发送 action={action} params={params} {describe_file(file_path)}")
+            return False, None, None
 
         payload = {
             "action": action,
@@ -948,7 +969,8 @@ class NapcatWebSocketBot:
                 await websocket.send(json.dumps(payload))
                 resp_data = await self._recv_until_echo(websocket, payload["echo"], timeout=FILE_SEND_TIMEOUT_SECONDS)
 
-                delete_remote_file(remote_file_path)
+                if remote_file_path:
+                    delete_remote_file(remote_file_path)
 
                 if not resp_data:
                     log("[❌ message_sender]", f"发送文件失败: 未收到响应 action={action} params={params} file_url={file_url}", "error")
@@ -959,8 +981,15 @@ class NapcatWebSocketBot:
                 return False, resp_data, None
         except Exception as e:
             log("[❌ message_sender]", f"发送文件失败 action={action} params={params} file_path={file_path} error={e}")
-            delete_remote_file(remote_file_path)
+            if remote_file_path:
+                delete_remote_file(remote_file_path)
             return False, None, None
+        finally:
+            if cleanup_path:
+                try:
+                    os.remove(cleanup_path)
+                except Exception:
+                    pass
 
     async def send_private_file(self, user_id, file_path):
         success, resp_data, _ = await self._send_file_payload(
@@ -1234,7 +1263,7 @@ async def send_redirected_file(scope_key, message_type, group_id, user_id, file_
         log("[✅ Redirect]", f"文件已发送到重定向群 target_group={REDIRECT_GROUP_ID}")
 
     remote_file_path, file_url, display_name = stage_file_for_forward(file_path)
-    if not remote_file_path or not file_url:
+    if not file_url:
         log(
             "[❌ Redirect]",
             f"转发文件准备失败 scope={scope_key} target_group={REDIRECT_GROUP_ID} {describe_file(file_path)}",
@@ -1843,6 +1872,7 @@ async def main():
     log("[🌐 SYSTEM]", f"WebSocket服务器: {WEBSOCKET_URL}")
     log("[🔗 SYSTEM]", f"HTTP监听端口: {HTTP_PORT}")
     log("[🌍 REMOTE]", f"SCP目标: {REMOTE_USER}@{REMOTE_HOST}:{REMOTE_TEMP_DIR}")
+    log("[🔧 TRANSFER]", f"Transfer mode: {'ssh' if USE_SSH_TRANSFER else 'local'}")
     
     # 打印版本信息，方便排查
     log("[📦 SYSTEM]", f"Websockets Version: {websockets.__version__}")

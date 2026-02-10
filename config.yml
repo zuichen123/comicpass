@@ -13,6 +13,7 @@ remote_host: 10.0.0.101
 remote_temp_dir: /home/zuichen/Server/Napcat2/.config/QQ/temp/
 local_ssh_key: /home/zuichen/.ssh/id_rsa
 docker_internal_path: /app/.config/QQ/temp/
+use_ssh_transfer: true
 random_password_length: 10
 dedup_window_seconds: 43200
 max_concurrent_downloads: 2
