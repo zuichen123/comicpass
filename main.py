@@ -30,9 +30,11 @@ import string
 # ====================== 基础配置 (已适配 NapCat Docker版) ======================
 app = FastAPI()
 
+# 配置文件路径
 CONFIG_PATH = "config.yml"
 CONFIG_SAMPLE_PATH = "config.example.yml"
 
+# 首次运行自动复制示例配置
 if not os.path.exists(CONFIG_PATH):
     if os.path.exists(CONFIG_SAMPLE_PATH):
         shutil.copyfile(CONFIG_SAMPLE_PATH, CONFIG_PATH)
@@ -45,6 +47,7 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as f:
     _config = yaml.safe_load(f) or {}
 
 def _cfg(key, default):
+    # 从配置读取，缺失时使用默认值
     return _config.get(key, default)
 
 admin_id = int(_cfg("admin_id", 627585966))  # 管理者QQ号
@@ -77,6 +80,7 @@ LOCAL_SSH_KEY = _cfg("local_ssh_key", "/home/zuichen/.ssh/id_rsa")
 # 宿主机的 .config/QQ 挂载到了容器的 /app/.config/QQ
 DOCKER_INTERNAL_PATH = _cfg("docker_internal_path", "/app/.config/QQ/temp/")
 
+# 传输模式开关：true=SSH上传；false=纯本地
 USE_SSH_TRANSFER = bool(_cfg("use_ssh_transfer", True))
 
 RANDOM_PASSWORD_LENGTH = int(_cfg("random_password_length", 10))
@@ -153,6 +157,7 @@ def get_total_memory_mb():
     return main_mem / 1024 / 1024, child_mem / 1024 / 1024
 
 def update_config():
+    # 保存配置到文件
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         yaml.dump(_config, f, allow_unicode=True, sort_keys=False, indent=4)
 
@@ -201,6 +206,7 @@ def describe_file(file_path: str) -> str:
         return f"path={file_path} info_error={e}"
 
 def scp_file_to_remote(local_file_path, remote_temp_filename=None):
+    # 通过 SCP 上传文件到远程临时目录
     if not os.path.exists(local_file_path):
         log("[❌ SCP]", f"本地文件不存在：{local_file_path}", "error")
         return None
@@ -232,6 +238,7 @@ def scp_file_to_remote(local_file_path, remote_temp_filename=None):
         return None
 
 def delete_remote_file(remote_file_path):
+    # SSH 模式下删除远程临时文件
     if not USE_SSH_TRANSFER:
         return True
 
@@ -461,6 +468,7 @@ def prepare_file_for_scp(file_path: str, force_safe: bool = False) -> tuple[str,
     return safe_path, True
 
 def stage_file_for_delivery(file_path: str, force_safe: bool = False) -> tuple[str | None, str | None, str | None]:
+    # 处理文件传输路径：SSH 或本地模式
     safe_path, cleanup_local = prepare_file_for_scp(file_path, force_safe=force_safe)
 
     if USE_SSH_TRANSFER:
@@ -729,6 +737,7 @@ def should_redirect(scope_key: str) -> bool:
     return scope_key in redirect_scopes
 
 def stage_file_for_forward(file_path: str) -> tuple[str | None, str | None, str | None]:
+    # 为合并转发准备文件节点
     if USE_SSH_TRANSFER:
         safe_path, cleanup_local = prepare_file_for_scp(file_path, force_safe=False)
         try:
