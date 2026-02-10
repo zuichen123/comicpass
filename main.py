@@ -29,41 +29,49 @@ import string
 
 # ====================== 基础配置 (已适配 NapCat Docker版) ======================
 app = FastAPI()
-admin_id = 627585966  # 管理者QQ号
-
-# ⚠️ 端口适配：使用新的 8071 端口，避免与旧机器人冲突
-HTTP_PORT = 8071  
-
-# ⚠️ WebSocket适配：指向 Docker 映射出来的 13001 端口
-WEBSOCKET_URL = "ws://10.0.0.101:13001"
-WEBSOCKET_TOKEN = "1"  # ✅ 新增：Token 鉴权
-
-FILE_DIR = "./pdf/"
-LOG_DIR = "./logs"
-
-FILE_SEND_TIMEOUT_SECONDS = 120
-
-# ====================== 转发重定向配置 ======================
-REDIRECT_GROUP_ID = 1083663846
-REDIRECT_THRESHOLD = 10
-FORWARD_BATCH_SIZE = 80
-
-# ====================== 关键路径配置 (Docker 适配) ======================
-# SCP 目标地址：这是宿主机上的实际路径 (NapCat 的 config 目录)
-REMOTE_USER = "zuichen"
-REMOTE_HOST = "10.0.0.101"  # ✅ 修改：使用本机回环地址 (前提是本机 SSH key 已配好)
-REMOTE_TEMP_DIR = "/home/zuichen/Server/Napcat2/.config/QQ/temp/" 
-LOCAL_SSH_KEY = "/home/zuichen/.ssh/id_rsa"
-
-# ✅ 新增：Docker 容器内部看到的路径
-# 宿主机的 .config/QQ 挂载到了容器的 /app/.config/QQ
-DOCKER_INTERNAL_PATH = "/app/.config/QQ/temp/"
-
-RANDOM_PASSWORD_LENGTH = 10
 
 # 读取配置文件
 with open("config.yml", "r", encoding="utf-8") as f:
-    _config = yaml.safe_load(f)
+    _config = yaml.safe_load(f) or {}
+
+def _cfg(key, default):
+    return _config.get(key, default)
+
+admin_id = int(_cfg("admin_id", 627585966))  # 管理者QQ号
+
+# ⚠️ 端口适配：使用新的 8071 端口，避免与旧机器人冲突
+HTTP_PORT = int(_cfg("http_port", 8071))
+
+# ⚠️ WebSocket适配：指向 Docker 映射出来的 13001 端口
+WEBSOCKET_URL = _cfg("websocket_url", "ws://10.0.0.101:13001")
+WEBSOCKET_TOKEN = _cfg("websocket_token", "1")  # ✅ 新增：Token 鉴权
+
+FILE_DIR = _cfg("file_dir", "./pdf/")
+LOG_DIR = _cfg("log_dir", "./logs")
+
+FILE_SEND_TIMEOUT_SECONDS = int(_cfg("file_send_timeout_seconds", 120))
+
+# ====================== 转发重定向配置 ======================
+REDIRECT_GROUP_ID = int(_cfg("redirect_group_id", 1083663846))
+REDIRECT_THRESHOLD = int(_cfg("redirect_threshold", 10))
+FORWARD_BATCH_SIZE = int(_cfg("forward_batch_size", 80))
+
+# ====================== 关键路径配置 (Docker 适配) ======================
+# SCP 目标地址：这是宿主机上的实际路径 (NapCat 的 config 目录)
+REMOTE_USER = _cfg("remote_user", "zuichen")
+REMOTE_HOST = _cfg("remote_host", "10.0.0.101")  # ✅ 修改：使用本机回环地址 (前提是本机 SSH key 已配好)
+REMOTE_TEMP_DIR = _cfg("remote_temp_dir", "/home/zuichen/Server/Napcat2/.config/QQ/temp/")
+LOCAL_SSH_KEY = _cfg("local_ssh_key", "/home/zuichen/.ssh/id_rsa")
+
+# ✅ 新增：Docker 容器内部看到的路径
+# 宿主机的 .config/QQ 挂载到了容器的 /app/.config/QQ
+DOCKER_INTERNAL_PATH = _cfg("docker_internal_path", "/app/.config/QQ/temp/")
+
+RANDOM_PASSWORD_LENGTH = int(_cfg("random_password_length", 10))
+
+# ====================== 去重配置 ======================
+DEDUP_WINDOW_SECONDS = int(_cfg("dedup_window_seconds", 12 * 60 * 60))
+recent_requests: dict[str, dict[str, float]] = {}
 
 banned_id: list[str] = [str(id) for id in _config.get("banned_id", [])]
 banned_user: list[str] = [str(user) for user in _config.get("banned_user", [])]
@@ -86,10 +94,6 @@ random_password_enabled_group: dict = _config.get("random_password_enabled_group
 
 regex_enabled_global: bool = bool(_config.get("regex_enabled_global", False))
 regex_enabled_group: dict = _config.get("regex_enabled_group", {})
-
-# ====================== 去重配置 ======================
-DEDUP_WINDOW_SECONDS = 12 * 60 * 60
-recent_requests: dict[str, dict[str, float]] = {}
 
 # ====================== 搜索状态配置 ======================
 search_pending: dict[str, dict] = {} # scope -> {jm_id: str, title: str, time: float}
@@ -1086,7 +1090,7 @@ class NapcatWebSocketBot:
 # ====================== 全局状态管理 (传入 Token) ======================
 bot = NapcatWebSocketBot(WEBSOCKET_URL, token=WEBSOCKET_TOKEN)
 client = jmcomic.JmOption.default().new_jm_client()
-max_episodes = 20
+max_episodes = int(_cfg("max_episodes", 20))
 jm_functioning = True
 jm_is_running = False
 jm_task_queue: asyncio.Queue = asyncio.Queue()
