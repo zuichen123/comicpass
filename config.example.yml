@@ -1,11 +1,11 @@
-admin_id: 627585966
+admin_id: 100000001
 http_port: 8071
 websocket_url: ws://10.0.0.101:13001
 websocket_token: '1'
 file_dir: ./pdf/
 log_dir: ./logs
 file_send_timeout_seconds: 120
-redirect_group_id: 1083663846
+redirect_group_id: 100000002
 redirect_threshold: 10
 forward_batch_size: 80
 remote_user: zuichen
@@ -20,35 +20,35 @@ max_concurrent_downloads: 2
 max_episodes: 20
 send_mode_global: pdf
 send_mode_group:
-    '609976107': pdf
-    '992833511': zip
+    '100000003': pdf
+    '100000004': zip
 send_name_mode_global: full
 send_name_mode_group:
-    '609976107': jm
+    '100000003': jm
 enc_enabled_global: false
 enc_enabled_group:
-    '609976107': true
-    '992833511': true
-    '838187768': true
-    '741048265': true
-    '707971900': true
+    '100000003': true
+    '100000004': true
+    '100000005': true
+    '100000006': true
+    '100000007': true
 enc_password_global: ''
 enc_password_group:
-    '609976107': '123456'
-    '992833511': '321'
-    '838187768': '350234'
-    '741048265': '123456'
-    '707971900': '114514'
+    '100000003': '123456'
+    '100000004': '321'
+    '100000005': '350234'
+    '100000006': '123456'
+    '100000007': '114514'
 random_password_enabled_global: false
 random_password_enabled_group:
-    '609976107': true
-    '992833511': true
+    '100000003': true
+    '100000004': true
 regex_enabled_global: false
 regex_enabled_group:
-    '741048265': true
-    '838187768': true
-    '707971900': true
-    '992833511': true
+    '100000006': true
+    '100000005': true
+    '100000007': true
+    '100000004': true
 banned_id: []
 banned_user: []
 banned_group: []
