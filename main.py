@@ -30,8 +30,18 @@ import string
 # ====================== 基础配置 (已适配 NapCat Docker版) ======================
 app = FastAPI()
 
+CONFIG_PATH = "config.yml"
+CONFIG_SAMPLE_PATH = "config.example.yml"
+
+if not os.path.exists(CONFIG_PATH):
+    if os.path.exists(CONFIG_SAMPLE_PATH):
+        shutil.copyfile(CONFIG_SAMPLE_PATH, CONFIG_PATH)
+    else:
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+            f.write("")
+
 # 读取配置文件
-with open("config.yml", "r", encoding="utf-8") as f:
+with open(CONFIG_PATH, "r", encoding="utf-8") as f:
     _config = yaml.safe_load(f) or {}
 
 def _cfg(key, default):
@@ -143,7 +153,7 @@ def get_total_memory_mb():
     return main_mem / 1024 / 1024, child_mem / 1024 / 1024
 
 def update_config():
-    with open("config.yml", "w", encoding="utf-8") as f:
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         yaml.dump(_config, f, allow_unicode=True, sort_keys=False, indent=4)
 
 def is_filename_too_long_error(err: Exception) -> bool:

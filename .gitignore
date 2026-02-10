@@ -1,1 +1,4 @@
 .aider*
+config.yml
+option.yml
+venv/
