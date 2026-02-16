@@ -1,55 +1,89 @@
 admin_id: 627585966
+http_host: 0.0.0.0
 http_port: 8071
 websocket_url: ws://10.0.0.101:13001
-websocket_token: '1'
+websocket_token: "1"
 file_dir: ./pdf/
+manga_dir: ./manga/
+cbz_dir: ./cbz/
+cbz_chapter_enabled: true
+cbz_series_enabled: true
 log_dir: ./logs
-file_send_timeout_seconds: 120
-redirect_group_id: 1083663846
-redirect_threshold: 10
-forward_batch_size: 80
+jm_option_path: ./configs/option.yml
+transfer_mode: scp
 remote_user: zuichen
 remote_host: 10.0.0.101
 remote_temp_dir: /home/zuichen/Server/Napcat2/.config/QQ/temp/
 local_ssh_key: /home/zuichen/.ssh/id_rsa
 docker_internal_path: /app/.config/QQ/temp/
-use_ssh_transfer: true
-random_password_length: 10
+download_timeout: 1800
+search_timeout: 600
+max_episodes: 100
 dedup_window_seconds: 43200
-max_concurrent_downloads: 2
-max_episodes: 20
+random_password_length: 10
+soutu_trigger_window_seconds: 120
+soutu_global_m: 3331358690401
+soutu_factor: 1.2
+soutu_url: https://soutubot.moe
+soutu_api: https://soutubot.moe/api/search
+soutu_user_agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36
+cf_bypass_api_url: http://127.0.0.1:18000/api/v1/bypass
+cf_bypass_poll_interval_sec: 2
+cf_bypass_poll_timeout_sec: 120
+embedded_bypass_enabled: true
+embedded_bypass_host: 127.0.0.1
+embedded_bypass_port: 18000
+http_port_fallback: false
+port_fallback_tries: 20
 send_mode_global: pdf
 send_mode_group:
-    '609976107': pdf
-    '992833511': zip
-send_name_mode_global: full
+    "609976107": zip
+    "992833511": zip
+send_name_mode_global: jm
 send_name_mode_group:
-    '609976107': jm
+    "609976107": jm
 enc_enabled_global: false
 enc_enabled_group:
-    '609976107': true
-    '992833511': true
-    '838187768': true
-    '741048265': true
-    '707971900': true
-enc_password_global: ''
+    "609976107": true
+    "707971900": true
+    "741048265": true
+    "838187768": true
+    "992833511": true
+enc_password_global: ""
 enc_password_group:
-    '609976107': '123456'
-    '992833511': '321'
-    '838187768': '350234'
-    '741048265': '123456'
-    '707971900': '114514'
+    "609976107": "123456"
+    "707971900": "114514"
+    "741048265": "123456"
+    "838187768": "350234"
+    "992833511": "321"
 random_password_enabled_global: false
 random_password_enabled_group:
-    '609976107': true
-    '992833511': true
+    "609976107": true
+    "992833511": true
 regex_enabled_global: false
 regex_enabled_group:
-    '741048265': true
-    '838187768': true
-    '707971900': true
-    '992833511': true
-banned_id: []
+    "609976107": true
+    "707971900": true
+    "741048265": true
+    "838187768": true
+    "992833511": true
+banned_id:
+    - "350234"
+    - "5667"
+    - "1"
+    - "2"
+    - "3"
+    - "4"
+    - "5"
+    - "6"
+    - "7"
+    - "8"
+    - "9"
+    - "10"
 banned_user: []
 banned_group: []
-banned_tags: []
+reply_as_card: true
+card_nickname: 文件助手
+card_user_id: 627585966
+local_test_mode: false
+local_test_exit_after_selftest: false

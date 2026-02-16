@@ -14,7 +14,7 @@ log_dir: ./logs # 日志目录
 file_send_timeout_seconds: 120 # 文件发送超时(秒)
 
 # JMComic 核心配置
-jm_option_path: ./option.yml # jmcomic option文件路径
+jm_option_path: ./configs/option.yml # jmcomic option文件路径
 download_timeout: 1800 # 下载超时(秒)
 search_timeout: 600 # 搜索确认等待超时(秒)
 soutu_trigger_window_seconds: 120 # 识图触发窗口时长(秒)：发送 /jm search 或 识图 后，在窗口内发图才识别

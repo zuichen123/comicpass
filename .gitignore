@@ -1,4 +1,10 @@
 .aider*
 config.yml
+logs/
+pdf/
+manga/
+cbz/
+bin/napcat-jm-go
 option.yml
 venv/
+.venv/
