@@ -1,12 +1,36 @@
 # 示例配置文件：首次运行会复制为 config.yml
 # 请根据实际环境修改以下配置
 admin_id: 100000001 # 管理员QQ号
+http_host: "0.0.0.0" # HTTP监听Host
 http_port: 8071 # HTTP监听端口
 websocket_url: ws://10.0.0.101:13001 # WebSocket地址
 websocket_token: '1' # WebSocket鉴权Token
 file_dir: ./pdf/ # PDF文件目录
+manga_dir: ./manga/ # 漫画目录（章节+图片+ComicInfo.xml）
+cbz_dir: ./cbz/ # cbz目录（章节与整本打包）
+cbz_chapter_enabled: true # 是否输出每章cbz
+cbz_series_enabled: true # 是否输出整本cbz
 log_dir: ./logs # 日志目录
 file_send_timeout_seconds: 120 # 文件发送超时(秒)
+
+# JMComic 核心配置
+jm_option_path: ./option.yml # jmcomic option文件路径
+download_timeout: 1800 # 下载超时(秒)
+search_timeout: 600 # 搜索确认等待超时(秒)
+soutu_trigger_window_seconds: 120 # 识图触发窗口时长(秒)：发送 /jm search 或 识图 后，在窗口内发图才识别
+soutu_url: "https://soutubot.moe" # soutubot站点地址
+soutu_api: "https://soutubot.moe/api/search" # soutubot识图API
+soutu_global_m: 3331358690401 # soutubot API key参数
+soutu_factor: 1.2 # 识图灵敏度参数
+soutu_user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+cf_bypass_api_url: "http://127.0.0.1:8000/api/v1/bypass" # cloudflare bypass接口（来自soutubot项目）
+cf_bypass_poll_interval_sec: 2 # bypass轮询间隔(秒)
+cf_bypass_poll_timeout_sec: 120 # bypass轮询超时(秒)
+embedded_bypass_enabled: true # 是否内置启动 bypass 服务（推荐开启，go run . 自动启动）
+embedded_bypass_host: "127.0.0.1" # 内置 bypass 服务监听地址
+embedded_bypass_port: 18000 # 内置 bypass 服务首选端口（占用时自动顺延）
+http_port_fallback: false # 主服务端口是否自动退避（建议false，保持与NapCat配置一致）
+port_fallback_tries: 20 # 端口退避尝试次数（内置 bypass 使用；主服务仅在 http_port_fallback=true 时使用）
 
 # 转发/重定向配置
 redirect_group_id: 100000002
@@ -19,13 +43,22 @@ remote_host: 10.0.0.101
 remote_temp_dir: /home/zuichen/Server/Napcat2/.config/QQ/temp/
 local_ssh_key: /home/zuichen/.ssh/id_rsa
 docker_internal_path: /app/.config/QQ/temp/
-use_ssh_transfer: true # true=SSH上传；false=纯本地
+transfer_mode: scp # scp 或 local
 
 # 其他通用配置
 random_password_length: 10
 dedup_window_seconds: 43200
 max_concurrent_downloads: 2
 max_episodes: 20
+reply_as_card: false # 是否将回复尽量以转发卡片发送
+card_nickname: "文件助手" # 卡片显示昵称
+card_user_id: 100000001 # 卡片显示QQ号（建议填管理员QQ）
+local_test_mode: false # 本地全流程测试模式（JM下载与NapCat发送均走本地模拟）
+local_test_exit_after_selftest: false # 启动后跑完一次自测即退出（用于debug）
+
+# 系统资源配置
+memory_cleanup_interval: 300 # 内存清理/检查间隔(秒)
+memory_limit_mb: 600 # 内存限制(MB)，超过自动重启
 
 # 发送模式配置
 send_mode_global: pdf
