@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  napcat-jm-go:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: napcat-jm-go:latest
+    container_name: napcat-jm-go
+    restart: unless-stopped
+    ports:
+      - "8071:8071"
+      - "18000:18000"
+    volumes:
+      - ./config.yml:/app/config.yml
+      - ./pdf:/app/pdf
+      - ./manga:/app/manga
+      - ./cbz:/app/cbz
+      - ./logs:/app/logs

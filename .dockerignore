@@ -1,0 +1,12 @@
+.git
+.gitignore
+.aider*
+.venv
+venv
+bin
+pdf
+manga
+cbz
+logs
+config.yml
+docs
