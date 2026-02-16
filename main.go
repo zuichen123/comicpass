@@ -750,9 +750,9 @@ func runCloudflareBypass(q bypassQuery) (bypassResponse, error) {
 
 	allocCtx, allocCancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	defer allocCancel()
-	ctx, cancel := chromedp.NewContext(allocCtx)
+	ctx, cancel := chromedp.NewContext(allocCtx, chromedp.WithLogf(func(string, ...any) {}))
 	defer cancel()
-	ctx, timeoutCancel := context.WithTimeout(ctx, 120*time.Second)
+	ctx, timeoutCancel := context.WithTimeout(ctx, 180*time.Second)
 	defer timeoutCancel()
 
 	if err := chromedp.Run(ctx, chromedp.Navigate(q.URL)); err != nil {
@@ -766,7 +766,7 @@ func runCloudflareBypass(q bypassQuery) (bypassResponse, error) {
 		return bypassResponse{}, fmt.Errorf("get user agent: %w", err)
 	}
 
-	for i := 0; i < 24; i++ {
+	for i := 0; i < 75; i++ {
 		// Poll cookies; for default 5s shield cf_clearance appears automatically.
 		if i > 0 {
 			time.Sleep(2 * time.Second)
@@ -794,7 +794,7 @@ func runCloudflareBypass(q bypassQuery) (bypassResponse, error) {
 		}
 	}
 
-	return bypassResponse{}, errors.New("no cf_clearance cookie acquired after waiting challenge window")
+	return bypassResponse{}, errors.New("no cf_clearance cookie acquired after waiting challenge window (~150s)")
 }
 
 func resolveChromeExecPath() (string, error) {
